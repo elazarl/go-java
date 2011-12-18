@@ -10,15 +10,16 @@ import static org.golang.runtime.GoRoutines.go;
 /**
  * Translated example from golang.org home page
  */
+@SuppressWarnings({"InfiniteLoopStatement"})
 public class PrimeSieve {
 
     static class Filter implements Runnable {
         ReceiveOnlyChannel<Integer> in;
-        public Filter setIn(ReceiveOnlyChannel<Integer> in) {this.in = in;return this;}
         SendOnlyChannel<Integer> out;
-        public Filter setOut(SendOnlyChannel<Integer> out) {this.out = out;return this;}
         int prime;
-        public Filter setPrime(int prime) {this.prime = prime;return this;}
+        public Filter(ReceiveOnlyChannel<Integer> _in, SendOnlyChannel<Integer> _out, int _prime) {
+            in = _in;out = _out;prime = _prime;
+        }
 
         public void run() {
             // Note: It is safe to ignore Intellij's comment about infinite loop, it's a valid Go pattern
@@ -49,7 +50,7 @@ public class PrimeSieve {
             int prime = ch.receive();
             fmt.Println(prime);
             Channel<Integer> ch1 = Channel.make();
-            go(new Filter().setIn(ch.getReceiveOnly()).setOut(ch1.getSendOnly()).setPrime(prime));
+            go(new Filter(ch.getReceiveOnly(),ch1.getSendOnly(),prime));
             ch = ch1;
         }
     }
