@@ -32,29 +32,32 @@ import java.util.List;
  *
  */
 public class Func {
-    ThreadLocal<Boolean> isPanic = new ThreadLocal<Boolean>() {
+    static ThreadLocal<Boolean> isPanic = new ThreadLocal<Boolean>() {
         @Override protected Boolean initialValue() {
             return false;
         }
     };
-    ThreadLocal<Panic> panicException = new ThreadLocal<Panic>();
+    static ThreadLocal<Panic> panicException = new ThreadLocal<Panic>();
 
     private List<Runnable> defers = new ArrayList<Runnable>();
 
-    static Func BEGIN() {
+    public static Func BEGIN() {
         return new Func();
     }
 
-    void defer(Runnable runnable) {
+    public void defer(Runnable runnable) {
         defers.add(runnable);
     }
 
-    void panic(String message) {
+    public void panic(String message) {
         isPanic.set(true);
-        throw new Panic(message);
+        panicException.set(new Panic(message));
+        throw panicException.get();
     }
 
-    String recover() {
+    // result of exception not thrown since we're recovering from it
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
+    static public String recover() {
         if (!isPanic.get()) return null;
         // Note: It is safe to ignore Intellij comment here. Go programs don't use exceptions by design.
         String message = panicException.get().getMessage();
@@ -63,9 +66,13 @@ public class Func {
         return message;
     }
 
-    void END() {
-        for (Runnable defer : defers) {
-            defer.run();
+    private Runnable popDefered() {
+        return defers.remove(defers.size()-1);
+    }
+
+    public void END() {
+        while (!defers.isEmpty()) {
+            popDefered().run();
         }
         if (isPanic.get()) throw panicException.get();
     }

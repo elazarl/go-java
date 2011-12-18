@@ -33,8 +33,28 @@ public class fmt {
     }
 
     static public CommaOk<Integer> Println(Object... objects) {
-        CommaOk<Integer> commaOk = Print(objects);
+        int nr = 0;
+        CommaOk<Integer> commaOk;
+        for (Object object : objects) {
+            commaOk = Print(object);
+            if (!commaOk.ok) return commaOk;
+            nr += commaOk.value;
+            commaOk = Print(" ");
+            if (!commaOk.ok) return commaOk;
+            nr += commaOk.value;
+        }
+        commaOk = Print("\n");
         if (!commaOk.ok) return commaOk;
-        return Print("\n");
+        return CommaOk.of(commaOk.value+nr);
+    }
+
+    /**
+     * Poor implementation of Go's fmt.Sprintf(...). Will use Java's {@code String.format}, and will replace %v with %s
+     * @param pattern pattern
+     * @param objects objects to embed in pattern
+     * @return pattern with embedded objects
+     */
+    public static String Sprint(String pattern, Object... objects) {
+        return String.format(pattern.replace("%v","%s"),objects);
     }
 }
