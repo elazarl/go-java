@@ -1,10 +1,10 @@
 package org.golang.example;
 
 import org.golang.pkg.fmt.fmt;
-import org.golang.runtime.Func;
+import org.golang.runtime.DeferEnv;
 import org.golang.runtime.Panic;
 
-import static org.golang.runtime.Func.*;
+import static org.golang.runtime.DeferEnv.*;
 
 /**
  * Example of defer and catch usage from http://blog.golang.org/2010/08/defer-panic-and-recover.html
@@ -12,7 +12,7 @@ import static org.golang.runtime.Func.*;
 public class DeferPanicAndRecover {
     // Output should be 3210
     static public void b() {
-        final Func _ = BEGIN();
+        final DeferEnv _ = BEGIN();
         try {
             for (int i=0;i<4;i++) {
                 final int finalI = i;
@@ -33,7 +33,7 @@ public class DeferPanicAndRecover {
     // clause, this is problematic for primitives, but not for classes.
     // We'll fix that by always returning a reference to something, and unwrapping the reference with a helper function
     static public int[] c_() {
-        final Func _ = BEGIN();
+        final DeferEnv _ = BEGIN();
         try {
             final int[] i = new int[1];
             _.defer(new Runnable() {
@@ -52,7 +52,7 @@ public class DeferPanicAndRecover {
     }
 
     static public void f() {
-        final Func _ = BEGIN();
+        final DeferEnv _ = BEGIN();
         try {
             _.defer(new Runnable() {
                 public void run() {
@@ -73,7 +73,7 @@ public class DeferPanicAndRecover {
     // This function ends recursion with exception by design.
     @SuppressWarnings({"InfiniteRecursion"})
     private static void g(final int i) {
-        final Func _ = BEGIN();
+        final DeferEnv _ = BEGIN();
         try {
             if (i > 3) {
                 fmt.Println("Panicking!");

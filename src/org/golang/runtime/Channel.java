@@ -1,8 +1,9 @@
 package org.golang.runtime;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.SynchronousQueue;
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Equivalent to bidirectional Go's channels
@@ -19,16 +20,27 @@ import java.util.concurrent.SynchronousQueue;
  * </pre>
  */
 public class Channel<T> {
-    private BlockingQueue<T> queue;
+    private Queue<T> queue = new ArrayDeque<T>();
+    private int maxSize;
 
-    static final String noInterruptError = "In go-like program, Thread.interrupt should never be called";
+    public static final String noInterruptError = "In go-like program, Thread.interrupt should never be called";
+
+    /** Main lock guarding all access */
+    private final ReentrantLock lock;
+    /** Condition for waiting takes */
+    private final Condition notEmpty;
+    /** Condition for waiting puts */
+    private final Condition notFull;
 
     private Channel(int length) {
-        queue = new ArrayBlockingQueue<T>(length);
+        maxSize  = length;
+        lock     = new ReentrantLock(true);
+        notEmpty = lock.newCondition();
+        notFull  = lock.newCondition();
     }
 
     private Channel() {
-        queue = new SynchronousQueue<T>();
+        this(0);
     }
 
     static public <T> Channel<T> make() {
@@ -36,6 +48,7 @@ public class Channel<T> {
     }
 
     static public <T> Channel<T> ofLength(int length) {
+        if (length == 0) throw new RuntimeException("Not implemented yet");
         return new Channel<T>(length);
     }
 
@@ -47,19 +60,44 @@ public class Channel<T> {
         return new ReceiveOnlyChannel<T>(this);
     }
 
-    public void send(T data) {
+    void startReceive() {
+        lock.lock();
+        while (queue.size() == 0) notEmpty.awaitUninterruptibly();
+    }
+
+    T endReceive() {
         try {
-            queue.put(data);
-        } catch (InterruptedException e) {
-            throw new AssertionError(noInterruptError);
+            return queue.remove();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    void cancelReceive() {
+        lock.unlock();
+    }
+
+    public void send(T data) {
+        lock.lock();
+        try {
+            while (queue.size() == maxSize) notFull.awaitUninterruptibly();
+            queue.add(data);
+            notEmpty.signal();
+        } finally {
+            lock.unlock();
         }
     }
 
     public T receive() {
+        lock.lock();
         try {
-            return queue.take();
-        } catch (InterruptedException e) {
-            throw new AssertionError(noInterruptError);
+            while (queue.size() == 0) notEmpty.awaitUninterruptibly();
+            T t = queue.remove();
+            notFull.signal();
+            return t;
+        } finally {
+            lock.unlock();
         }
     }
+
 }
