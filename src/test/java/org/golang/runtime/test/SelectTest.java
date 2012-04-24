@@ -1,3 +1,5 @@
+package org.golang.runtime.test;
+
 import org.golang.pkg.time.Duration;
 import org.golang.pkg.time.time;
 import org.golang.runtime.Channel;
@@ -63,7 +65,7 @@ public class SelectTest {
                 })
         );
 
-        Assert.assertArrayEquals(new String[]{FIRST},list.toArray());
+        Assert.assertArrayEquals(new String[]{FIRST}, list.toArray());
 
         select(
                 Case.of(first).then(new Func1<String>() {

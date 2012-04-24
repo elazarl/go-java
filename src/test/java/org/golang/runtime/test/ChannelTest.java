@@ -1,3 +1,5 @@
+package org.golang.runtime.test;
+
 import org.golang.runtime.Channel;
 import org.junit.Assert;
 import org.junit.Test;
@@ -6,11 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Created by IntelliJ IDEA.
- * User: elazar
- * Date: 4/18/12
- * Time: 12:00 AM
- * To change this template use File | Settings | File Templates.
+ * Tests the Go channel implementation, using Java's primitive
  */
 public class ChannelTest {
     @Test

@@ -1,11 +1,12 @@
 package org.golang.pkg.time;
 
 /**
- * Created by IntelliJ IDEA.
- * User: elazar
- * Date: 4/17/12
- * Time: 8:29 AM
- * To change this template use File | Settings | File Templates.
+ * Mimics Go's {@code time.Duration} type. Duration contains a {@code long} value, counting nanoseconds, and can be
+ * used in a readable way with the predefined constants.
+ *
+ * <pre>
+ *     time.Sleep(Duration.Second.times(5)); // sleeps for five seconds
+ * </pre>
  */
 public class Duration {
 
