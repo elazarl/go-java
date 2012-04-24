@@ -20,7 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * </pre>
  */
 public class Channel<T> {
-    private Queue<T> queue = new ArrayDeque<T>();
+    Queue<T> queue = new ArrayDeque<T>();
     private int maxSize;
 
     public static final String noInterruptError = "In go-like program, Thread.interrupt should never be called";
@@ -61,8 +61,12 @@ public class Channel<T> {
     }
 
     void startReceive() {
-        lock.lock();
-        while (queue.size() == 0) notEmpty.awaitUninterruptibly();
+        try {
+            lock.lockInterruptibly();
+            while (queue.size() == 0) notEmpty.await();
+        } catch (InterruptedException e) {
+            lock.unlock();
+        }
     }
 
     T endReceive() {

@@ -1,17 +1,18 @@
 package org.golang.runtime;
 
 import org.golang.runtime.functions.Func1;
-import org.golang.runtime.functions.Func2;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.golang.runtime.GoRoutines.go;
 
 /**
  * Emulate Go's select statement, usage
  *
- * <pre>{@code select(
+ * <pre>
+ * select(
  * Case.of(ch1).then(
  *     new Func1<Integer>(Integer i) {
  *         fmt.Println("ch1",i)
@@ -23,7 +24,6 @@ import static org.golang.runtime.GoRoutines.go;
  *     }
  * ),
  * );
- * }
  * </pre>
  */
 public class Select {
@@ -54,12 +54,16 @@ public class Select {
     
     public static void select(Case... cases) {
         final AtomicBoolean iAmFirst = new AtomicBoolean(true);
-        final CountDownLatch latch = new CountDownLatch(cases.length);
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        List<Future> threads = new ArrayList<Future>();
         for (final Case aCase : cases) {
-            go(new Runnable() {
+            threads.add(GoRoutines.goroutinesExecutor.submit(new Runnable() {
                 @Override
+                @SuppressWarnings("unchecked")
                 public void run() {
                     aCase.channel.startReceive();
+
                     if (iAmFirst.getAndSet(false)) {
                         aCase.action.call(aCase.channel.endReceive());
                     } else {
@@ -67,10 +71,13 @@ public class Select {
                     }
                     latch.countDown();
                 }
-            });
+            }));
         }
         try {
             latch.await();
+            for (Future thread : threads) {
+                thread.cancel(true);
+            }
         } catch (InterruptedException e) {
             throw new Panic(Channel.noInterruptError);
         }

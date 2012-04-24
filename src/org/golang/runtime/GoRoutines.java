@@ -1,6 +1,6 @@
 package org.golang.runtime;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -11,7 +11,7 @@ public class GoRoutines {
 //    private static final int GOMAXPROCS = Runtime.getRuntime().availableProcessors();
     // I'm cheating a little, since I can't "steal" the stack of a thread in Java, so I can't have one thread running
     // two goroutines.
-    static final Executor goroutinesExecutor = Executors.newCachedThreadPool();
+    static final ExecutorService goroutinesExecutor = Executors.newCachedThreadPool();
 
     public static void go(Runnable goroutine) {
         goroutinesExecutor.execute(goroutine);
